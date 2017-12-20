@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Mysql Diff</title>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap-theme.min.css">
+    <style>
+        #diffTable td, #diffTable th{text-align: center;}
+        #diffTable th{vertical-align:middle;}
+        #diffTable .text-diff{text-align: left;font-family: Consolas, monospace;}
+    </style>
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <table class="table table-bordered table-stripped" id="diffTable">
+        <tr>
+            <th>表名</th>
+            <th>字段名</th>
+            <th>差异</th>
+        </tr>
+    </table>
+</div>
+
+<script>
+    const SERVER_URL = 'http://localhost:8080/diff/';
+
+    $.get(SERVER_URL + 'db', function(res) {
+        let str = '';
+        for (let i = 0; i < res.length; ++i) {
+            str += formatTableDiff(res[i]);
+        }
+        $('#diffTable').append(str);
+    });
+
+    function formatTableDiff(tableDiff) {
+       const rowspan = tableDiff.columnDiffs && tableDiff.columnDiffs.length ? tableDiff.columnDiffs.length + 1 : 1;
+       let str = '<tr><th rowspan="' + rowspan + '">' + tableDiff.tableName + '</th>';
+       if (tableDiff.diffType === 'ADDED') {
+           str += '<td colspan="2" class="text-success">db1多出</td></tr>';
+       } else if (tableDiff.diffType === 'DELETED') {
+           str += '<td colspan="2" class="text-danger">db2多出</td></tr>';
+       } else {
+           str += '</tr>';
+           str += formatColumnDiffs(tableDiff.columnDiffs);
+       }
+       return str;
+    }
+
+    function formatColumnDiffs(columnDiffs) {
+        let str = '';
+        for (let i = 0; i < columnDiffs.length; ++i) {
+            const diff = columnDiffs[i];
+            str += '<tr><th>' + diff.columnName + '</th>';
+            str += '<td class="text-diff">' +
+                '<div class="text-success">db1: ' + (diff.col1Type || '') + '</div>' +
+                '<div class="text-danger">db2: ' + (diff.col2Type || '') + '</div>' +
+                '</td>';
+            str += '</tr>';
+        }
+        return str;
+    }
+
+</script>
+</body>
+</html>
