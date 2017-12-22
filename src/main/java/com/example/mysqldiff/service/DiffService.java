@@ -96,11 +96,45 @@ public class DiffService {
     }
 
     private String formatColumnType(ColumnPO columnPO) {
-        return columnPO.getColumnType() + " " +
-                "DEFAULT '" + columnPO.getColumnDefault() + "' " +
-                ("YES".equals(columnPO.getIsNullable()) ? "NULL" : "NOT NULL") + " " +
-                "CHARSET " + columnPO.getCharacterSetName() + " " +
-                "COLLATION " + columnPO.getCollationName() + " " +
-                columnPO.getExtra();
+        StringBuilder stringBuilder = new StringBuilder();
+        // column type
+        stringBuilder.append(columnPO.getColumnType());
+
+        // charset
+        if (null != columnPO.getCharacterSetName()) {
+            stringBuilder.append(" CHARACTER SET ").append(columnPO.getCharacterSetName());
+            stringBuilder.append(" COLLATE ").append(columnPO.getCollationName());
+        }
+
+        // nullable
+        boolean isNullable = "YES".equalsIgnoreCase(columnPO.getIsNullable());
+        if (!isNullable) {
+            stringBuilder.append(" NOT NULL ");
+        }
+
+        // default value
+        String defaultValue = columnPO.getColumnDefault();
+        if (null != defaultValue) {
+            if ("CURRENT_TIMESTAMP".equalsIgnoreCase(defaultValue)) {
+                stringBuilder.append(" DEFAULT CURRENT_TIMESTAMP");
+            } else {
+                stringBuilder.append(" DEFAULT '").append(defaultValue).append("'");
+            }
+        } else {
+            // 默认值是null时，仅当字段isNullable时才加上default null，i.e. 字段是not null时，后面就不加default null了
+            if (isNullable) {
+                stringBuilder.append(" DEFAULT NULL");
+            }
+        }
+
+        // extra
+        String extra = columnPO.getExtra();
+        if ("auto_increment".equalsIgnoreCase(extra)) {
+            stringBuilder.append(" AUTO_INCREMENT");
+        } else if ("on update CURRENT_TIMESTAMP".equalsIgnoreCase(extra)) {
+            stringBuilder.append(" ON UPDATE CURRENT_TIMESTAMP");
+        }
+
+        return stringBuilder.toString();
     }
 }

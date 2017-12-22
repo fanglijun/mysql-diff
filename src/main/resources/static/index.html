@@ -25,6 +25,7 @@
             <th>差异</th>
         </tr>
     </table>
+    <h3 id="loading" class="text-center">Loading...</h3>
 </div>
 
 <script>
@@ -36,6 +37,7 @@
             str += formatTableDiff(res[i]);
         }
         $('#diffTable').append(str);
+        $('#loading').text('done.');
     });
 
     function formatTableDiff(tableDiff) {
