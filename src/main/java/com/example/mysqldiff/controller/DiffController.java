@@ -2,7 +2,9 @@ package com.example.mysqldiff.controller;
 
 import com.example.mysqldiff.service.DiffService;
 import com.example.mysqldiff.vo.ColumnDiffVo;
+import com.example.mysqldiff.vo.SyncDirectionEnum;
 import com.example.mysqldiff.vo.TableDiffVo;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -36,5 +38,10 @@ public class DiffController {
     public List<TableDiffVo> diffDb() {
         List<TableDiffVo> diffVos = diffService.compareDb();
         return diffVos;
+    }
+
+    @RequestMapping(path = "sync-db", method = RequestMethod.GET)
+    public Map<String, List<String>> syncDb(@RequestParam("syncDirection")SyncDirectionEnum syncDirection) {
+        return diffService.syncDb(syncDirection);
     }
 }
