@@ -136,7 +136,7 @@ public class DiffService {
                     continue;
                 }
                 if (tableDiffVo.getDiffType().equals(DiffTypeEnum.ADDED)) {
-                    String sql = this.showCreateTable(null, tableName);
+                    String sql = this.showCreateTable(tableName, null);
                     sqls.put(tableName, Collections.singletonList(sql));
                     continue;
                 }

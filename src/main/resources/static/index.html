@@ -8,28 +8,75 @@
     <title>Mysql Diff</title>
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="lib/highlight/styles/default.css">
     <style>
-        #diffTable td, #diffTable th{text-align: center;}
-        #diffTable th{vertical-align:middle;}
-        #diffTable .text-diff{text-align: left;font-family: Consolas, monospace;}
+        .mb15{margin-bottom: 15px;}
+        .table tbody tr td, .table tbody tr th{text-align: center;}
+        .table tbody tr th{vertical-align: middle;}
+        .table .td-code{text-align: left;font-family: Consolas, monospace;}
     </style>
     <script src="lib/jquery.min.js"></script>
     <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="lib/highlight/highlight.pack.js"></script>
 </head>
 <body>
 <div class="container">
-    <table class="table table-bordered table-stripped" id="diffTable">
-        <tr>
-            <th>表名</th>
-            <th>字段名</th>
-            <th>差异</th>
-        </tr>
-    </table>
+
+    <ul class="nav nav-tabs mb15">
+        <li class="active"><a href="#diff" data-toggle="tab">对比差异</a></li>
+        <li><a href="#sync" data-toggle="tab">同步SQL</a></li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content mb15">
+        <div class="tab-pane active" id="diff">
+            <table class="table table-bordered table-stripped" id="diffTable">
+                <tr>
+                    <th>表名</th>
+                    <th>字段名</th>
+                    <th>差异</th>
+                </tr>
+            </table>
+        </div>
+        <div class="tab-pane" id="sync">
+            <form class="form-inline mb15">
+                <div class="form-group">
+                    <label for="syncDirection">同步方向</label>
+                    <select class="form-control" id="syncDirection">
+                        <option value="DB1_TO_DB2">DB1 to DB2</option>
+                        <option value="DB2_TO_DB1">DB2 to DB1</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" id="btnSyncSql">生成同步SQL</button>
+            </form>
+            <table class="table table-bordered table-striped" id="syncTable"></table>
+        </div>
+    </div>
+
+
     <h3 id="loading" class="text-center">Loading...</h3>
 </div>
 
 <script>
     const SERVER_URL = 'http://localhost:8080/diff/';
+
+    $('#btnSyncSql').click(function () {
+        $('#loading').show();
+        $('#syncTable').hide();
+        $.get(SERVER_URL + 'sync-db?syncDirection=' + $('#syncDirection').val(), function (res) {
+            var str = '<tr><th>表名</th><td>SQL</td></tr>';
+            $.each(res, function (tableName, sqls) {
+                str += '<tr><th>' + tableName + '</th><td class="td-code"><pre><code class="sql">';
+                str += sqls.join("\r\n");
+                str += '</code></pre></td></tr>';
+            });
+            $('#syncTable').html('<tbody>' + str + '</tbody>').show();
+            $('pre code').each(function(i, block) {
+                hljs.highlightBlock(block);
+            });
+            $('#loading').hide();
+        });
+    });
 
     $.get(SERVER_URL + 'db', function(res) {
         let str = '';
@@ -37,7 +84,7 @@
             str += formatTableDiff(res[i]);
         }
         $('#diffTable').append(str);
-        $('#loading').text('done.');
+        $('#loading').hide();
     });
 
     function formatTableDiff(tableDiff) {
@@ -59,7 +106,7 @@
         for (let i = 0; i < columnDiffs.length; ++i) {
             const diff = columnDiffs[i];
             str += '<tr><th>' + diff.columnName + '</th>';
-            str += '<td class="text-diff">' +
+            str += '<td class="td-code">' +
                 '<div class="text-success">db1: ' + (diff.col1Type || '') + '</div>' +
                 '<div class="text-danger">db2: ' + (diff.col2Type || '') + '</div>' +
                 '</td>';
